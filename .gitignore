@@ -1,4 +1,5 @@
 *~
+*.iso
 *.tar.gz
 *.tar.xz
 .kateproject.d
