@@ -1,0 +1,11 @@
+[Unit]
+Description=Initialize PostgreSQL
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/init-postgres.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

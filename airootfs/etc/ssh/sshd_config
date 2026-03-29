@@ -1,0 +1,19 @@
+Port 22
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
+AllowUsers    root
+PermitRootLogin yes
+#PermitRootLogin prohibit-password
+PubkeyAuthentication yes
+AuthorizedKeysFile	.ssh/authorized_keys
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+UsePAM yes
+X11Forwarding no
+X11DisplayOffset 50
+X11UseLocalhost no
+PrintMotd no # pam does that
+ClientAliveInterval 60
+ClientAliveCountMax 5
+Subsystem	sftp	/usr/lib/ssh/sftp-server
