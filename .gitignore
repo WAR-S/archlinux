@@ -1,0 +1,8 @@
+*~
+*.tar.gz
+*.tar.xz
+.kateproject.d
+*.sig
+/nixdk/
+.vscode/
+.directory
