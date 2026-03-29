@@ -128,3 +128,5 @@ xl2tpd
 zsh
 # Packages custom
 postgresql
+fastfetch
+networkmanager

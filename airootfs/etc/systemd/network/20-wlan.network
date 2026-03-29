@@ -1,5 +1,7 @@
+# wlp2s0 не матчим: AP поднимает NetworkManager (см. NetworkManager/system-connections/Wifi.nmconnection).
 [Match]
 Type=wlan
+Name=!wlp2s0
 
 [Link]
 RequiredForOnline=routable

@@ -1,0 +1,13 @@
+[Unit]
+Description=Wait for WiFi AP IP address
+After=NetworkManager.service wifi-ap-autostart.service
+Wants=NetworkManager.service wifi-ap-autostart.service
+Before=dnsmasq.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/bash -c 'for _ in $(seq 1 150); do if ip -4 addr show dev wlp2s0 | grep -q "inet 10.10.10.1/24"; then exit 0; fi; sleep 0.2; done; echo "ERROR: wlp2s0 did not get 10.10.10.1/24 in time"; ip -4 addr show dev wlp2s0 || true; exit 1'
+
+[Install]
+WantedBy=multi-user.target

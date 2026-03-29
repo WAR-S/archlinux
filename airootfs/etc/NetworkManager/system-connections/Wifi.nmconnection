@@ -1,0 +1,31 @@
+# Порт nixos-nettop layers/configuration/06-wifi-ap/default.nix (Wifi.nmconnection).
+# Синхронизируйте с nixos-nettop/config/infrastructure.yaml → network.ap / network.wifi.
+
+[connection]
+id=Wifi
+uuid=8f2c0b3a-1d4e-5f6a-9b0c-1a2b3c4d5e6f
+type=wifi
+interface-name=wlp2s0
+autoconnect=true
+
+[wifi]
+band=bg
+mode=ap
+ssid=xxx
+p2p-disable=1
+
+[wifi-security]
+key-mgmt=wpa-psk
+psk=qwerty123
+proto=rsn
+group=ccmp
+pairwise=ccmp
+
+[ipv4]
+address1=10.10.10.1/24,10.10.10.1
+dns=10.10.10.1
+dns-search=domain.local
+method=manual
+
+[ipv6]
+method=disabled

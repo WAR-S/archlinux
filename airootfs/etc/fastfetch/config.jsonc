@@ -1,0 +1,99 @@
+{
+  "logo": {
+    "type": "file",
+    "source": "/etc/fastfetch/logo.ascii",
+    "position": "right"
+  },
+    "modules": [
+      "title",
+      "separator",
+  
+      {
+        "type": "command",
+        "key": "Release",
+        "text": "cat /etc/build.info"
+      },
+      {
+        "type": "command",
+        "key": "Date",
+        "text": "date"
+      },
+      {
+        "type": "uptime",
+        "key": "Uptime"
+      },
+  
+      "separator",
+  
+      {
+        "type": "command",
+        "key": "Hostname",
+        "text": "hostname"
+      },
+      "kernel",
+      {
+        "type": "host",
+        "key": "Host"
+      },
+      "packages",
+      "cpu",
+      "gpu",
+  
+      "separator",
+  
+      {
+        "type": "cpuusage",
+        "key": "CPU Usage"
+      },
+      {
+        "type": "disk",
+        "key": "Disk"
+      },
+      {
+        "type": "memory",
+        "key": "Memory"
+      },
+  
+      {
+        "type": "command",
+        "key": "Process count",
+        "text": "ps ax | wc -l"
+      },
+  
+      "separator",
+  
+      {
+        "type": "command",
+        "key": "Wifi mode",
+        "text": "iw dev 2>/dev/null | grep type | awk '{print $2}' || echo N/A"
+      },
+  
+      "break",
+      {
+        "type": "command",
+        "key": "VPN IP",
+        "text": "ip -4 addr show tun0 2>/dev/null | awk '/inet/ {print $2}' | head -n1 || echo N/A"
+      },
+      {
+        "type": "command",
+        "key": "LAN IP",
+        "text": "ip -4 addr show eth0 2>/dev/null | awk '/inet/ {print $2}' | head -n1 || echo N/A"
+      },
+      {
+        "type": "command",
+        "key": "USB Modem IP",
+        "text": "ip -4 addr show usbmodem0 2>/dev/null | awk '/inet/ {print $2}' | head -n1 || echo N/A"
+      },
+      {
+        "type": "command",
+        "key": "Wifi client",
+        "text": "echo -e \"\\n$(iw dev wlp2s0 station dump 2>/dev/null || echo N/A)\""
+      },
+      "separator",
+      {
+        "type": "command",
+        "key": "Interfaces",
+        "text": "echo -e \"\\n$(ip addr show | grep 'UP' | grep -viE 'flannel|cni')\""
+      }
+    ]
+  }

@@ -1,0 +1,13 @@
+[Unit]
+Description=Bring up WiFi AP connection via NetworkManager
+After=NetworkManager.service
+Wants=NetworkManager.service
+Before=wifi-ap-wait-ip.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/bash -c 'set -e; for i in $(seq 1 10); do if /usr/bin/nmcli con up Wifi; then exit 0; fi; sleep 3; done; echo "wifi-ap-autostart: failed to bring up Wifi after retries"; exit 1'
+
+[Install]
+WantedBy=multi-user.target
