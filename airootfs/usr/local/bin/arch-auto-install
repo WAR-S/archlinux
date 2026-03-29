@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+# Автоустановка Arch на диск с live ISO. Включается из GRUB: arch.autoInstall=1 [arch.installDisk=/dev/nvme0n1]
+set -euo pipefail
+
+log() { echo "[arch-auto-install] $*"; }
+
+get_cmdline_val() {
+  local key="$1"
+  local p
+  for p in $(cat /proc/cmdline); do
+    case "$p" in
+      "${key}="*) echo "${p#*=}"; return 0 ;;
+    esac
+  done
+  return 1
+}
+
+partition_path() {
+  # /dev/sda1, /dev/nvme0n1p1, /dev/mmcblk0p1
+  local disk="$1" n="$2"
+  if [[ "$disk" =~ (nvme|mmcblk|loop) ]]; then
+    echo "${disk}p${n}"
+  else
+    echo "${disk}${n}"
+  fi
+}
+
+detect_install_disk() {
+  local from_cmdline
+  from_cmdline="$(get_cmdline_val arch.installDisk 2>/dev/null || true)"
+  if [[ -n "$from_cmdline" && -b "$from_cmdline" ]]; then
+    echo "$from_cmdline"
+    return
+  fi
+  local dev
+  for dev in /dev/nvme*n1; do
+    [[ -b "$dev" ]] && echo "$dev" && return
+  done
+  while read -r name rm _; do
+    [[ "$rm" == "0" && -n "$name" && -b "/dev/$name" ]] && echo "/dev/$name" && return
+  done < <(lsblk -d -n -o NAME,RM 2>/dev/null)
+  echo ""
+}
+
+run_install() {
+  local DISK PART_ROOT PART_ESP
+
+  DISK="$(detect_install_disk)"
+  if [[ -z "$DISK" || ! -b "$DISK" ]]; then
+    log "ERROR: no suitable install disk. Set arch.installDisk=/dev/... on kernel cmdline."
+    exit 1
+  fi
+  log "Target disk: $DISK"
+
+  if [[ -d /sys/firmware/efi ]]; then
+    log "Firmware: UEFI — GPT + ESP + root"
+    wipefs -a "$DISK" 2>/dev/null || true
+    parted -s "$DISK" mklabel gpt
+    parted -s "$DISK" mkpart ESP fat32 1MiB 551MiB
+    parted -s "$DISK" set 1 esp on
+    parted -s "$DISK" mkpart root ext4 551MiB 100%
+    PART_ESP="$(partition_path "$DISK" 1)"
+    PART_ROOT="$(partition_path "$DISK" 2)"
+    mkfs.fat -F32 -n ESP "$PART_ESP"
+    mkfs.ext4 -F -L root "$PART_ROOT"
+    mount "$PART_ROOT" /mnt
+    mkdir -p /mnt/boot/efi
+    mount "$PART_ESP" /mnt/boot/efi
+  else
+    log "Firmware: BIOS/legacy — MBR + single ext4"
+    wipefs -a "$DISK" 2>/dev/null || true
+    parted -s "$DISK" mklabel msdos
+    parted -s "$DISK" mkpart primary ext4 1MiB 100%
+    parted -s "$DISK" set 1 boot on
+    PART_ROOT="$(partition_path "$DISK" 1)"
+    mkfs.ext4 -F -L root "$PART_ROOT"
+    mount "$PART_ROOT" /mnt
+  fi
+
+  log "pacstrap..."
+  pacstrap /mnt base linux linux-firmware vim sudo networkmanager grub dosfstools efibootmgr
+
+  log "fstab..."
+  genfstab -U /mnt >>/mnt/etc/fstab
+
+  if [[ -d /sys/firmware/efi ]]; then
+    log "chroot (UEFI)..."
+    arch-chroot /mnt /bin/bash <<CHROOT
+set -e
+ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+hwclock --systohc || true
+echo "arch" >/etc/hostname
+passwd -d root
+systemctl enable NetworkManager
+grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB
+grub-mkconfig -o /boot/grub/grub.cfg
+CHROOT
+  else
+    log "chroot (BIOS)..."
+    arch-chroot /mnt /bin/bash <<CHROOT
+set -e
+ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+hwclock --systohc || true
+echo "arch" >/etc/hostname
+passwd -d root
+systemctl enable NetworkManager
+grub-install --target=i386-pc --recheck "$DISK"
+grub-mkconfig -o /boot/grub/grub.cfg
+CHROOT
+  fi
+
+  log "Installation complete. Rebooting in 5s..."
+  sleep 5
+  reboot -f
+}
+
+main() {
+  local AUTO
+  AUTO="$(get_cmdline_val arch.autoInstall 2>/dev/null || true)"
+  if [[ "$AUTO" != "1" && "$AUTO" != "true" && "$AUTO" != "yes" ]]; then
+    log "arch.autoInstall not enabled — exiting."
+    exit 0
+  fi
+
+  echo "=== Arch auto-install ==="
+  run_install
+}
+
+main "$@"

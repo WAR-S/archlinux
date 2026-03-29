@@ -1,0 +1,18 @@
+[Unit]
+Description=Arch Linux automatic installation to disk
+Documentation=man:archiso(7)
+# Нужны ключи pacman и сеть для pacstrap.
+After=pacman-init.service network-online.target systemd-networkd.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/arch-auto-install
+StandardOutput=journal+console
+StandardError=journal+console
+TimeoutStartSec=0
+# Только при явном параметре ядра (как nixos.autoInstall на Nix ISO).
+ConditionKernelCommandLine=arch.autoInstall
+
+[Install]
+WantedBy=multi-user.target
